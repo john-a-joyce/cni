@@ -143,6 +143,18 @@ $ GOOS=linux make docker.push
 
 **NOTE:** Set HUB and TAG per your docker registry.
 
+### Pre-commit Testing
+
+```
+make test
+```
+
+#### Current Tests
+1. install-test (`make install-test`)
+   1. Requires docker
+   1. docker runs the `install-cni` container with test dirs mounted and env vars set to known Kubernetes settings
+   1. does file compares to determine if the results match the expected configuration
+
 ## Implementation Details
 
 **TODOs**
