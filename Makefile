@@ -114,6 +114,9 @@ export ISTIO_BIN=$(GO_TOP)/bin
 export OUT_DIR=$(GO_TOP)/out
 export ISTIO_OUT:=$(GO_TOP)/out/$(GOOS)_$(GOARCH)/$(BUILDTYPE_DIR)
 export HELM=$(ISTIO_OUT)/helm
+export ISTIO_SRC=/tmp/istio
+export ISTIO_ROOT=$(ISTIO_SRC)/istio
+#JAJ mkdir $ISTIO_SRC
 
 # scratch dir: this shouldn't be simply 'docker' since that's used for docker.save to store tar.gz files
 ISTIO_DOCKER:=${ISTIO_OUT}/docker_temp
@@ -280,3 +283,19 @@ install-test:
 .PHONY: selected-pkg-test
 selected-pkg-test:
 	find ${WHAT} -name "*_test.go"|xargs -i dirname {}|uniq|xargs -i go test ${T} {}
+
+#-----------------------------------------------------------------------------
+# Target: e2e tests
+#-----------------------------------------------------------------------------
+include test/e2e/cni.mk
+
+generate_yaml: $(HELM)
+	./bin/getIstio.sh -d ${ISTIO_SRC} >/dev/null 2>&1
+	cat ${ISTIO_ROOT}/install/kubernetes/namespace.yaml > ${ISTIO_ROOT}/install/kubernetes/istio-auth.yaml
+	$(HELM) template --set global.tag=${TAG} \
+		--name=istio \
+		--namespace=istio-system \
+		--set global.hub=${HUB} \
+		--set global.proxy.enableCoreDump=${ENABLE_COREDUMP} \
+		--values ${ISTIO_ROOT}/install/kubernetes/helm/istio/values.yaml \
+		${ISTIO_ROOT}/install/kubernetes/helm/istio >> ${ISTIO_ROOT}/install/kubernetes/istio-auth.yaml
